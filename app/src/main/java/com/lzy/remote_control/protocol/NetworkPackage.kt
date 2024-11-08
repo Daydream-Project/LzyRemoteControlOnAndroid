@@ -14,7 +14,7 @@ class NetworkPackage: ResolvableData {
         private const val packageLengthSize = 8
         private const val dataTypeIdSize = 4
 
-        private val loader = ResolvableDataLoader();
+        private val loader = ResolvableDataLoader()
 
         private fun packageCheck(bytes: Array<Byte>)
         {
@@ -75,7 +75,6 @@ class NetworkPackage: ResolvableData {
         crcCheck(bytes)
 
         val dataTypeId = bytesToInt(bytes, packageBegin.size)
-        val contentLength = bytesToLong(bytes, packageBegin.size + dataTypeIdSize)
 
         val contentBytes = bytes.slice(packageBegin.size + dataTypeIdSize + packageLengthSize..bytes.size - packageEnd.size - crcSize)
 

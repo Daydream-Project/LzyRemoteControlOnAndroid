@@ -37,10 +37,10 @@ class ExampleUnitTest {
 
         assert(packageBytes1.size == 22)
 
-        val packageBytes2: Array<Byte> = arrayOf(-1,-2,-3,0,0,0,2,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-3,-2,-1)
+        val packageBytes2: Array<Byte> = arrayOf(-1,-2,-3,0,0,0,2,0,0,0,0,0,0,0,0,0,0,-1,-1,-3,-2,-1)
 
         for (i in 0 until 22) {
-            assert(packageBytes1[i] == packageBytes1[i])
+            assert(packageBytes1[i] == packageBytes2[i])
         }
     }
 }
