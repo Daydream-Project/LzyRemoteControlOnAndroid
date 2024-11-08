@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">RemoteControl</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="enableServiceText">服务已启动</string>
+    <string name="disableServiceTest">服务已关闭</string>
+    <string name="passwordHint">输入设置的密码</string>
+    <string name="portHint">请输入端口</string>
+    <string name="showPassword">显示密码</string>
+    <string name="hidePassword">隐藏密码</string>
+</resources>
