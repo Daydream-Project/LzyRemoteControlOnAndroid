@@ -3,12 +3,12 @@ package com.lzy.remote_control.protocol
 import java.security.InvalidParameterException
 import kotlin.reflect.KClass
 
-fun calculateCrc16(bytes: Array<Byte>, startIndex: Int = 0, endIndex: Int = bytes.size): Int
+fun calculateCrc16(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = bytes.size): Int
 {
-    if (startIndex < 0 || (bytes.isNotEmpty() && startIndex > bytes.size - 1))
-        throw InvalidParameterException("startIndex is invalid")
-    if (endIndex < 0 || (bytes.isNotEmpty() && endIndex > bytes.size - 1))
-        throw InvalidParameterException("endIndex is invalid")
+    if (startIndex < 0 || (bytes.isNotEmpty() && startIndex > bytes.size - 1) || (bytes.isEmpty() && startIndex != 0))
+        throw InvalidParameterException("startIndex value $startIndex is invalid")
+    if (endIndex < 0 || (bytes.isNotEmpty() && endIndex > bytes.size - 1) || (bytes.isEmpty() && endIndex != 0))
+        throw InvalidParameterException("endIndex value $endIndex is invalid")
 
     var crc = 0xFFFF
     for (idx in startIndex until  endIndex) {
@@ -26,46 +26,46 @@ fun calculateCrc16(bytes: Array<Byte>, startIndex: Int = 0, endIndex: Int = byte
     return crc and 0xFFFF
 }
 
-fun bytesToLong(bytes: Array<Byte>, startIndex: Int): Long {
+fun ubytesToLong(bytes: Array<UByte>, startIndex: Int): Long {
     var result : Long = 0
     var temp : Long
 
-    for (i in startIndex until startIndex + 8) {
-        temp = bytes[i].toLong()
-        result = result or (temp shl ((i - startIndex) * 8))
+    for (i in 0 until 8) {
+        temp = bytes[i + startIndex].toLong()
+        result = result or (temp shl (i * 8))
     }
 
     return result
 }
 
-fun bytesToInt(bytes: Array<Byte>, startIndex: Int): Int
+fun ubytesToInt(bytes: Array<UByte>, startIndex: Int): Int
 {
     var result = 0
     var temp : Int
 
-    for (i in startIndex until startIndex + 4) {
-        temp = bytes[i].toInt()
-        result = result or (temp shl ((i - startIndex) * 8))
+    for (i in 0 until 4) {
+        temp = bytes[i + startIndex].toInt()
+        result = result or (temp shl (i * 8))
     }
 
     return result
 }
 
-fun longToBytes(value: Long): Array<Byte> {
-    val result = Array<Byte>(8) { _ -> 0 }
+fun longToUBytes(value: Long): Array<UByte> {
+    val result = Array(8) { _ -> 0.toUByte() }
 
     for (i in 0 until 8) {
-        result[i] = (value shr (8 * (7 - i))).toByte()
+        result[i] = (value shr (8 * i)).toUByte()
     }
 
     return result
 }
 
-fun intToBytes(value: Int): Array<Byte> {
-    val result = Array<Byte>(4) { _ -> 0 }
+fun intToUBytes(value: Int): Array<UByte> {
+    val result = Array(4) { _ -> 0.toUByte() }
 
     for (i in 0 until 4) {
-        result[i] = (value shr (8 * (7 - i))).toByte()
+        result[i] = (value shr (8 * i)).toUByte()
     }
 
     return result

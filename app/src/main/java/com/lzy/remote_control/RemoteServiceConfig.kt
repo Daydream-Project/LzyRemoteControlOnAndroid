@@ -11,8 +11,10 @@ import java.security.MessageDigest
 
 class RemoteServiceConfig(context: Context) {
 
-    private var sharedPreferences = context.getSharedPreferences(configName,
-        AppCompatActivity.MODE_PRIVATE)
+    private var sharedPreferences = context.getSharedPreferences(
+        configName,
+        AppCompatActivity.MODE_PRIVATE
+    )
 
     companion object {
 
@@ -31,27 +33,24 @@ class RemoteServiceConfig(context: Context) {
             return Base64.encodeToString(resultBytes, Base64.DEFAULT)
         }
 
-        fun startService(context: Context)
-        {
+        fun startService(context: Context) {
             val serviceIntent = Intent(context, RemoteControlService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
             }
-            else {
-                context.startService(serviceIntent)
-            }
+            context.startService(serviceIntent)
         }
 
-        fun stopService(context: ContextWrapper)
-        {
+        fun stopService(context: ContextWrapper) {
             val serviceIntent = Intent(context, RemoteControlService::class.java)
             context.stopService(serviceIntent)
         }
+    }
 
-        private fun isValidPort(portNum: Int): Boolean
-        {
-            return portNum in 1..65535
-        }
+
+
+    private fun isValidPort(portNum: Int): Boolean {
+        return portNum in 1..65535
     }
 
     fun updateConnectionConfig(password: String,portNum: Int)

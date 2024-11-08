@@ -1,7 +1,7 @@
 package com.lzy.remote_control.protocol
 
 interface ResolvableData {
-    fun toBytes(): Array<Byte>
-    fun countBytes(): Long
-    fun fromBytes(bytes: Array<Byte>)
+    fun toUBytes(): Array<UByte>
+    fun countUBytes(): Int
+    fun fromUBytes(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = bytes.size)
 }

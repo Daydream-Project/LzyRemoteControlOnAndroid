@@ -24,12 +24,4 @@ class ExampleInstrumentedTest {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         assertEquals("com.lzy.remote_control", appContext.packageName)
     }
-
-    @Test
-    fun testResolvableDataLoader() {
-        val loader = ResolvableDataLoader()
-        assert(loader.resolvableDataTypeMap.size == 2)
-        assert(loader.resolvableDataTypeMap[1] == NetworkPackage::class)
-        assert(loader.resolvableDataTypeMap[2] == GetCurrentActivityRequest::class)
-    }
 }

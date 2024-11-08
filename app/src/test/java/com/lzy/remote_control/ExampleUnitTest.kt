@@ -33,14 +33,36 @@ class ExampleUnitTest {
 
         networkPackage.content = request
 
-        val packageBytes1 = networkPackage.toBytes()
+        val packageBytes1 = networkPackage.toUBytes()
 
-        assert(packageBytes1.size == 22)
+        assert(packageBytes1.size == 18)
 
-        val packageBytes2: Array<Byte> = arrayOf(-1,-2,-3,0,0,0,2,0,0,0,0,0,0,0,0,0,0,-1,-1,-3,-2,-1)
+        val packageBytes2 = arrayOf(0xff.toUByte(),0xfe.toUByte(),0xfd.toUByte(),0x2.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0xff.toUByte(),0xff.toUByte(),0x0.toUByte(),0x0.toUByte(),0xfd.toUByte(),0xfe.toUByte(),0xff.toUByte())
 
-        for (i in 0 until 22) {
+        for (i in 0 until 18) {
             assert(packageBytes1[i] == packageBytes2[i])
         }
+
+        val packageBytes3 = networkPackage.toUBytes()
+
+        for (i in 0 until 18) {
+            assert(packageBytes3[i] == packageBytes2[i])
+        }
+
+        val packageBytes4 = arrayOf(0x9.toUByte(),0x9.toUByte(),0xff.toUByte(),0xfe.toUByte(),0xfd.toUByte(),0x2.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0x0.toUByte(),0xff.toUByte(),0xff.toUByte(),0x0.toUByte(),0x0.toUByte(),0xfd.toUByte(),0xfe.toUByte(),0xff.toUByte(),0x9.toUByte(),0x9.toUByte())
+
+        networkPackage.fromUBytes(packageBytes4,2 , packageBytes4.size - 2)
+
+        assert(networkPackage.content is GetCurrentActivityRequest)
+
+        var hasException = false
+
+        try {
+            networkPackage.fromUBytes(packageBytes4,0,18)
+        } catch (e: Exception) {
+            hasException = true
+        }
+
+        assert(hasException)
     }
 }
