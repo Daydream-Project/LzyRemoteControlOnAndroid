@@ -1,8 +1,9 @@
 package com.lzy.remote_control.protocol
 
-import java.lang.RuntimeException
 import java.security.InvalidParameterException
+import kotlin.RuntimeException
 
+@ResolvableDataType(1,"Network package.")
 class NetworkPackage: ResolvableData {
 
     companion object {
@@ -11,11 +12,14 @@ class NetworkPackage: ResolvableData {
 
         private const val crcSize = 4
         private const val packageLengthSize = 8
+        private const val dataTypeIdSize = 4
+
+        private val loader = ResolvableDataLoader();
 
         private fun packageCheck(bytes: Array<Byte>)
         {
             //检查大小
-            if (bytes.size < packageBegin.size + packageEnd.size + packageLengthSize + crcSize)
+            if (bytes.size < packageBegin.size + packageEnd.size + dataTypeIdSize + packageLengthSize + crcSize)
                 throw RuntimeException("invalid network package.")
 
             //检查包头
@@ -32,8 +36,14 @@ class NetworkPackage: ResolvableData {
                     throw RuntimeException("invalid network package ends.")
             }
 
+            //检查类型
+            val dataTypeId = bytesToInt(bytes, packageBegin.size)
+
+            if (!loader.resolvableDataTypeMap.containsKey(dataTypeId))
+                throw RuntimeException("Invalid data type id")
+
             //检查大小
-            val dataSize = bytesToLong(bytes, packageBegin.size + packageLengthSize)
+            val dataSize = bytesToLong(bytes, packageBegin.size + dataTypeIdSize)
 
             if (dataSize + packageBegin.size + packageEnd.size + crcSize + packageLengthSize != packageSize.toLong())
                 throw RuntimeException("invalid network package length.")
@@ -64,47 +74,49 @@ class NetworkPackage: ResolvableData {
 
         crcCheck(bytes)
 
+        val dataTypeId = bytesToInt(bytes, packageBegin.size)
+        val contentLength = bytesToLong(bytes, packageBegin.size + dataTypeIdSize)
 
+        val contentBytes = bytes.slice(packageBegin.size + dataTypeIdSize + packageLengthSize..bytes.size - packageEnd.size - crcSize)
 
+        val _content = (loader.resolvableDataTypeMap[dataTypeId]?.java?.constructors?.find { constructor -> constructor.parameterTypes.isEmpty() })?.newInstance()
+            ?: throw RuntimeException("Can not construct object belong to subtype of ResolvableData without constructor with no parameter.")
+
+        (_content as ResolvableData).fromBytes(contentBytes.toTypedArray())
+
+        content = _content
     }
 
     override fun toBytes(): Array<Byte> {
         parseCheck()
 
+        val dataTypeId = getDataTypeInfo(content!!)?.id ?: throw RuntimeException("Can not get data type info for subtype of ResolvableData")
+        val dataTypeIdByteArray = intToBytes(dataTypeId)
         val contentByteArray = content!!.toBytes()
         val dataSizeByteArray = longToBytes(contentByteArray.size.toLong())
         val packageSize = countBytes().toInt()
         val crcByteArray = intToBytes(calculateCrc16(contentByteArray))
 
-        val init: (Int) -> Byte = { index ->
-
+        return Array(packageSize) { index ->
             if (index < packageBegin.size)
                 packageBegin[index]
-
-            if (index - packageBegin.size < packageLengthSize)
-                dataSizeByteArray[index - packageBegin.size]
-
-            if (index > packageBegin.size + packageLengthSize && index < packageSize - crcSize - packageEnd.size)
-                contentByteArray[index - packageBegin.size - packageLengthSize]
-
-            if (index > packageBegin.size + packageLengthSize + contentByteArray.size && index < packageSize - packageEnd.size)
-                crcByteArray[index - packageBegin.size - packageLengthSize - contentByteArray.size]
-
-            if (index > packageSize - packageEnd.size && index < packageSize)
+            else if (index - packageBegin.size < dataTypeIdSize)
+                dataTypeIdByteArray[index - packageBegin.size]
+            else if (index - packageBegin.size - dataTypeIdSize < packageLengthSize)
+                dataSizeByteArray[index - packageBegin.size - dataTypeIdSize]
+            else if (index >= packageBegin.size + dataTypeIdSize + packageLengthSize && index < packageSize - crcSize - packageEnd.size)
+                contentByteArray[index - packageBegin.size - dataTypeIdSize - packageLengthSize]
+            else if (index >= packageBegin.size + dataTypeIdSize + packageLengthSize + contentByteArray.size && index < packageSize - packageEnd.size)
+                crcByteArray[index - packageBegin.size - dataTypeIdSize - packageLengthSize - contentByteArray.size]
+            else if (index >= packageSize - packageEnd.size && index < packageSize)
                 packageEnd[index - packageSize + packageEnd.size]
-
-            0.toByte()
+            else
+                throw RuntimeException("invalid index $index")
         }
-
-        return Array(packageSize, init)
     }
 
     override fun countBytes(): Long {
         parseCheck()
-        return packageBegin.size + packageLengthSize + content!!.countBytes() + crcSize + packageEnd.size
-    }
-
-    override fun getDataType(): Int {
-        return 0
+        return packageBegin.size + dataTypeIdSize + packageLengthSize + content!!.countBytes() + crcSize + packageEnd.size
     }
 }

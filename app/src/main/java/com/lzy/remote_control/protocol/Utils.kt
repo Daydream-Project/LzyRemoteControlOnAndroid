@@ -1,12 +1,13 @@
 package com.lzy.remote_control.protocol
 
 import java.security.InvalidParameterException
+import kotlin.reflect.KClass
 
 fun calculateCrc16(bytes: Array<Byte>, startIndex: Int = 0, endIndex: Int = bytes.size): Int
 {
-    if (startIndex < 0 || startIndex > bytes.size - 1)
+    if (startIndex < 0 || (bytes.isNotEmpty() && startIndex > bytes.size - 1))
         throw InvalidParameterException("startIndex is invalid")
-    if (endIndex < 0 || endIndex > bytes.size - 1)
+    if (endIndex < 0 || (bytes.isNotEmpty() && endIndex > bytes.size - 1))
         throw InvalidParameterException("endIndex is invalid")
 
     var crc = 0xFFFF
@@ -68,4 +69,14 @@ fun intToBytes(value: Int): Array<Byte> {
     }
 
     return result
+}
+
+fun getDataTypeInfo(obj: Any): ResolvableDataType? {
+    val dataTypeInfo = obj.javaClass.annotations.find { a -> a is ResolvableDataType }
+    return if (dataTypeInfo != null) dataTypeInfo as ResolvableDataType else null
+}
+
+fun getDataTypeInfo(classInfo: KClass<*>): ResolvableDataType? {
+    val dataTypeInfo = classInfo.java.annotations.find { a -> a is ResolvableDataType }
+    return if (dataTypeInfo != null) dataTypeInfo as ResolvableDataType else null
 }

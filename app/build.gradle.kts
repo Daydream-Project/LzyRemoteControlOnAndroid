@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
+
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
@@ -61,7 +63,6 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.coordinatorlayout)
-    implementation("org.reflections:reflections:0.9.11")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

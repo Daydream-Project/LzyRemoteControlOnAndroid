@@ -4,5 +4,4 @@ interface ResolvableData {
     fun toBytes(): Array<Byte>
     fun countBytes(): Long
     fun fromBytes(bytes: Array<Byte>)
-    fun getDataType(): Int
 }

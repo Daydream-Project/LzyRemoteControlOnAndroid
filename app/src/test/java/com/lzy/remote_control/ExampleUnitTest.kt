@@ -20,7 +20,27 @@ class ExampleUnitTest {
     @Test
     fun testResolvableDataLoader() {
         val loader = ResolvableDataLoader()
-        assert(loader.resolvableDataTypes.size == 1)
-        assert(loader.resolvableDataTypes[0] == NetworkPackage::class)
+        assert(loader.resolvableDataTypeMap.size == 2)
+        assert(loader.resolvableDataTypeMap[1] == NetworkPackage::class)
+        assert(loader.resolvableDataTypeMap[2] == GetCurrentActivityRequest::class)
+    }
+
+    @Test
+    fun testNetworkPackage()
+    {
+        val request = GetCurrentActivityRequest()
+        val networkPackage = NetworkPackage()
+
+        networkPackage.content = request
+
+        val packageBytes1 = networkPackage.toBytes()
+
+        assert(packageBytes1.size == 22)
+
+        val packageBytes2: Array<Byte> = arrayOf(-1,-2,-3,0,0,0,2,0,0,0,0,0,0,0,0,-1,-1,-1,-1,-3,-2,-1)
+
+        for (i in 0 until 22) {
+            assert(packageBytes1[i] == packageBytes1[i])
+        }
     }
 }
