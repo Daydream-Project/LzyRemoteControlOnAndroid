@@ -1,17 +1,30 @@
 package com.lzy.remote_control
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.InputType
-import android.widget.EditText
-import android.widget.ToggleButton
-import android.widget.Toast;
+import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.security.InvalidParameterException
+import com.lzy.remote_control.permission.PermissionUtils
 
 class MainActivity : AppCompatActivity() {
+
+    private var requestPermissionsResultHandler: ((Int, Array<out String>, IntArray) -> Unit)? = null
+
+    //If the handler of RequestPermissionsResult registered, forward message to it.
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        requestPermissionsResultHandler?.invoke(requestCode, permissions, grantResults)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -22,6 +35,18 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+
+        //Get permissions not allowed registered in AndroidManifest.xml
+        val notAllowedPermissions = PermissionUtils.getNotAllowedPermissions(this)
+
+        //Register the handler
+        requestPermissionsResultHandler = { code, _, results ->
+            if (results.isEmpty() || results[0] != PackageManager.PERMISSION_GRANTED)
+                Toast.makeText(this,"Permission ${notAllowedPermissions[code]} is not granted", Toast.LENGTH_SHORT).show()
+        }
+
+        //Request them and the request code is index of permissions.
+        PermissionUtils.requestPermissions(notAllowedPermissions, this)
 
         //Open service config.
         val remoteServiceConfig = RemoteServiceConfig(applicationContext)
@@ -62,7 +87,7 @@ class MainActivity : AppCompatActivity() {
                 var ok = false
 
                 do {
-                    var port = 0
+                    var port: Int
 
                     try {
 
@@ -135,6 +160,3 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
-
-
-
