@@ -15,6 +15,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        //Load layout file.
         setContentView(R.layout.activity_main)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -22,13 +23,16 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        //Open service config.
         val remoteServiceConfig = RemoteServiceConfig(applicationContext)
 
+        //Get controls in layout.
         val enableServiceButton = findViewById<ToggleButton>(R.id.enableServiceBtn)
         val passwordBox = findViewById<EditText>(R.id.passwordBox)
         val portBox = findViewById<EditText>(R.id.portBox)
         val showPassword = findViewById<ToggleButton>(R.id.showPassword)
 
+        //Load config to controls.
         passwordBox.setText(remoteServiceConfig.password)
         portBox.setText(remoteServiceConfig.port.toString())
 
@@ -44,13 +48,17 @@ class MainActivity : AppCompatActivity() {
              }
         }
 
+        //Set click event handler.
         enableServiceButton.setOnClickListener {
             view ->
 
             val btn = view as ToggleButton
 
+
             if (btn.isChecked)
             {
+                //If control is checked
+                //Write config and start service.
                 var ok = false
 
                 do {
@@ -95,7 +103,8 @@ class MainActivity : AppCompatActivity() {
             }
             else
             {
-
+                //If control is not checked.
+                //Stop Service.
 
                 try {
                     RemoteServiceConfig.stopService(application)
@@ -116,6 +125,8 @@ class MainActivity : AppCompatActivity() {
             view ->
 
             val btn = view as ToggleButton
+
+            //If control is checked show password else hide password.
 
             if (btn.isChecked)
                 passwordBox.inputType = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD

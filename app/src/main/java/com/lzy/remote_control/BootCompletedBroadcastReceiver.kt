@@ -4,15 +4,23 @@ import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 
 class BootCompletedBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent != null && intent.action == Intent.ACTION_BOOT_COMPLETED) {
             if (context != null) {
-                val remoteServiceConfig = RemoteServiceConfig(context.applicationContext)
+                try {
+                    //Read service config in SharedPreferences.
+                    val remoteServiceConfig = RemoteServiceConfig(context.applicationContext)
 
-                if (remoteServiceConfig.enableService)
-                    RemoteServiceConfig.startService(context.applicationContext as Application)
+                    //If the enableService state in config is enabled, start service.
+                    if (remoteServiceConfig.enableService) {
+                        RemoteServiceConfig.startService(context.applicationContext)
+                    }
+                } catch (e: Exception) {
+                    Log.d(RemoteServiceConfig.logTag, "Start Service failed! Exception is $e")
+                }
             }
         }
     }

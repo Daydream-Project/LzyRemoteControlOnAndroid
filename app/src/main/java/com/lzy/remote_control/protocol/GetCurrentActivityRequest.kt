@@ -2,6 +2,9 @@ package com.lzy.remote_control.protocol
 
 @ResolvableDataType(2,"Request to get current running activity in device")
 class GetCurrentActivityRequest: ResolvableData {
+
+    //Just using data type id to identify this request, so override ResolvableData methods width empty implement.
+
     override fun toUBytes(): Array<UByte> {
         return arrayOf()
     }

@@ -26,6 +26,7 @@ fun calculateCrc16(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = byt
     return crc and 0xFFFF
 }
 
+
 fun ubytesToLong(bytes: Array<UByte>, startIndex: Int): Long {
     var result : Long = 0
     var temp : Long

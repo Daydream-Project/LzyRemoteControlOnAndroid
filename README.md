@@ -5,7 +5,7 @@ A remote control app for android, maybe discarded because of my poor ability
 Android Studio + Android 14 (mininum support android 7.0)
 
 # Next step
-Add comment for code
+implement SSL socket communication.
 
 # Functions plan to Implement
 1. Send instrution to control android device by SSL socket. (Simulate touch, caupture screenshot, get running activity)

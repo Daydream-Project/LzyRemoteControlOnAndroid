@@ -26,6 +26,8 @@ class RemoteServiceConfig(context: Context) {
 
         private const val enableServiceKey = "enableService"
 
+        const val logTag = "LzyRemoteControl"
+
         fun hashPassword(password: String): String {
             val crypto = MessageDigest.getInstance("SHA-256")
             val passwordBytes = password.encodeToByteArray()
