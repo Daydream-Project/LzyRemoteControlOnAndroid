@@ -12,6 +12,7 @@ class ResolvableDataLoader {
 
         resolvableDataSubTypes.add(NetworkPackage::class)
         resolvableDataSubTypes.add(GetCurrentActivityRequest::class)
+        resolvableDataSubTypes.add(BroadcastRemoteControlServer::class)
 
         //Foreach subtype of ResolvableData, using data type id for key and KClass for value store in resolvableDataTypeMap
 

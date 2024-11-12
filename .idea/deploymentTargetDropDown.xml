@@ -8,8 +8,21 @@
       <entry key="testIPGetter()">
         <State />
       </entry>
-      <entry key="testResolvableDataLoader()">
-        <State />
+      <entry key="useAppContext()">
+        <State>
+          <runningDeviceTargetSelectedWithDropDown>
+            <Target>
+              <type value="RUNNING_DEVICE_TARGET" />
+              <deviceKey>
+                <Key>
+                  <type value="VIRTUAL_DEVICE_PATH" />
+                  <value value="C:\Users\Lzy\.android\avd\Pixel_3a_API_34_extension_level_7_x86_64.avd" />
+                </Key>
+              </deviceKey>
+            </Target>
+          </runningDeviceTargetSelectedWithDropDown>
+          <timeTargetWasSelectedWithDropDown value="2024-11-10T11:45:25.089872800Z" />
+        </State>
       </entry>
     </value>
   </component>

@@ -8,9 +8,21 @@ import android.app.Service
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.Message
 import androidx.core.app.NotificationCompat
+import com.lzy.remote_control.network.BroadcastPacketParam
+import com.lzy.remote_control.network.IPType
+import com.lzy.remote_control.network.InitUdpSocketParam
+import com.lzy.remote_control.network.NetworkMessageCallback
+import com.lzy.remote_control.network.NetworkMessageHandler
+import com.lzy.remote_control.network.NetworkThread
+import com.lzy.remote_control.network.getIPs
+import com.lzy.remote_control.protocol.BroadcastRemoteControlServer
+import com.lzy.remote_control.protocol.NetworkPackage
+import java.net.DatagramPacket
 
 class RemoteControlService : Service() {
+    private var thread: NetworkThread? = null
 
     companion object {
         private const val CHANNEL_ID = "LzyRemoteControl"
@@ -23,10 +35,104 @@ class RemoteControlService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForeground(1, buildNotification(SERVICE_TEXT))
+        initNetworkThread()
+    }
+
+    private fun exitThread() {
+        if (thread != null) {
+            val exitThreadMessage = Message()
+            exitThreadMessage.what = NetworkMessageHandler.EXIT_THREAD
+            thread!!.getHandler().sendMessage(exitThreadMessage)
+            thread = null
+        }
+    }
+
+    private fun initNetworkThread() {
+        val config = RemoteServiceConfig(applicationContext)
+
+        thread = NetworkThread()
+
+        //Start network thread.
+        thread!!.start()
+
+        //Create a init udpSocket callback that mark if success the initialization is
+        val initUdpSocketCallback = object : NetworkMessageCallback {
+            var initUdpSocketStatus = 0
+
+            override fun onBroadcastCompleted(exception: Exception?) {
+                synchronized(this) {
+                    initUdpSocketStatus = if (exception == null) 1 else 2
+                }
+            }
+
+        }
+
+        //Send init udp socket message and check the initialization is ok.
+        var initUdpSocketMessage = Message()
+        initUdpSocketMessage.what = NetworkMessageHandler.INIT_UDP_SOCKET
+        initUdpSocketMessage.obj = InitUdpSocketParam("0.0.0.0", config.port, initUdpSocketCallback)
+
+        thread!!.getHandler().sendMessage(initUdpSocketMessage)
+
+        //Wait for the result of initialization of udpSocket.
+        while(true) {
+            var initUdpSocketStatusCopy = 0
+
+            synchronized(initUdpSocketCallback) {
+                initUdpSocketStatusCopy = initUdpSocketCallback.initUdpSocketStatus
+            }
+
+            //If initialization is failed, stop service and exit.
+            if (initUdpSocketStatusCopy == 2) {
+                exitThread()
+                stopSelf()
+                return
+            }
+            //If initialization is ok, do rest things.
+            else if (initUdpSocketStatusCopy  == 1) {
+                break
+            }
+        }
+
+        //Make a object that broadcast ip and address when 5s passed.
+        val broadcastIPPort = object : Runnable {
+            private val port = config.port
+            private val handler = thread!!.getHandler()
+
+            override fun run() {
+                val ips = getIPs(IPType.ALL)
+                val protocolPacket = NetworkPackage()
+                val protocolPacketContent = BroadcastRemoteControlServer("",0)
+
+                protocolPacket.content = protocolPacketContent
+
+                for (ip in ips) {
+                    protocolPacketContent.ip = ip
+                    protocolPacketContent.port = port
+
+                    val bytes = protocolPacketContent.toUBytes()
+                    val packet = DatagramPacket(bytes.map { it.toByte() }.toByteArray(), bytes.size)
+
+                    val message = Message()
+                    message.what = NetworkMessageHandler.BROADCAST_PACKET
+                    message.obj = BroadcastPacketParam(packet, null)
+
+                    thread!!.getHandler().sendMessage(message)
+                }
+                postThis()
+            }
+
+            fun postThis() {
+                handler.postDelayed(this, 5000)
+            }
+        }
+
+        //Start broadcast
+        broadcastIPPort.postThis()
     }
 
     private fun buildNotification(contentText: String): Notification {
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager;
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val serviceChannel = NotificationChannel(
@@ -46,7 +152,7 @@ class RemoteControlService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        // 构建通知
+        // build notification.
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(SERVICE_TITLE)
             .setContentText(contentText)
@@ -56,7 +162,7 @@ class RemoteControlService : Service() {
 
         builder.setCategory(Notification.CATEGORY_SERVICE)
 
-        return builder.build();
+        return builder.build()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -68,8 +174,9 @@ class RemoteControlService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager;
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(1)
+        exitThread()
     }
 
     override fun onBind(intent: Intent?): IBinder? {

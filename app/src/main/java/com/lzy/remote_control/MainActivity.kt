@@ -9,7 +9,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.lzy.remote_control.network.getIPs
 import java.security.InvalidParameterException
 import com.lzy.remote_control.permission.PermissionUtils
 
@@ -80,7 +79,6 @@ class MainActivity : AppCompatActivity() {
             view ->
 
             val btn = view as ToggleButton
-
 
             if (btn.isChecked)
             {
