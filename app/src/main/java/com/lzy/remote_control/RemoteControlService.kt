@@ -105,11 +105,7 @@ class RemoteControlService : Service() {
                 val protocolPacket = NetworkPackage()
                 val protocolPacketContent = BroadcastRemoteControlServer()
                 val tempArray = Array<Byte>(0) { _ -> 0 }
-                val param = BroadcastPacketParam(DatagramPacket(tempArray.toByteArray(), tempArray.size), object : NetworkMessageCallback {
-                    override fun onMessageHandled(exception: Exception?) {
-                        exception?.let { Log.d("RemoteControlService", exception.toString()) }
-                    }
-                })
+
 
 
                 protocolPacket.content = protocolPacketContent
@@ -120,6 +116,12 @@ class RemoteControlService : Service() {
 
                     val bytes = protocolPacket.toUBytes()
                     val packet = DatagramPacket(bytes.map { it.toByte() }.toByteArray(), bytes.size)
+
+                    val param = BroadcastPacketParam(DatagramPacket(tempArray.toByteArray(), tempArray.size), object : NetworkMessageCallback {
+                        override fun onMessageHandled(exception: Exception?) {
+                            exception?.let { Log.d("RemoteControlService", exception.toString()) }
+                        }
+                    })
 
                     param.packet = packet
                     param.callback = object : NetworkMessageCallback {
