@@ -1,7 +1,9 @@
 package com.lzy.remote_control.protocol
 
 @ResolvableDataType(3,"Server ip and port info in udp broadcast")
-data class BroadcastRemoteControlServer(var ip: String, var port: Int): ResolvableData {
+class BroadcastRemoteControlServer(): ResolvableData {
+    var ip: String = ""
+    var port: Int = 0
 
     companion object {
         private const val IPLengthSize = 4
@@ -51,7 +53,7 @@ data class BroadcastRemoteControlServer(var ip: String, var port: Int): Resolvab
             throw RuntimeException("Packet string length not match.")
 
         //Parse data
-        ip = String(bytes.map { it.toByte() }.toByteArray(), startIndex + IPLengthSize, packetLength - PortSize, Charsets.UTF_8)
+        ip = String(bytes.map { it.toByte() }.toByteArray(), startIndex + IPLengthSize, packetLength - PortSize - IPLengthSize, Charsets.UTF_8)
 
         port = ubytesToInt(bytes, endIndex - PortSize)
     }

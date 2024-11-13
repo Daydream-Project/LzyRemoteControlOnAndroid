@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.os.Message
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.lzy.remote_control.network.BroadcastPacketParam
 import com.lzy.remote_control.network.IPType
@@ -59,7 +60,7 @@ class RemoteControlService : Service() {
         val initUdpSocketCallback = object : NetworkMessageCallback {
             var initUdpSocketStatus = 0
 
-            override fun onBroadcastCompleted(exception: Exception?) {
+            override fun onMessageHandled(exception: Exception?) {
                 synchronized(this) {
                     initUdpSocketStatus = if (exception == null) 1 else 2
                 }
@@ -68,7 +69,7 @@ class RemoteControlService : Service() {
         }
 
         //Send init udp socket message and check the initialization is ok.
-        var initUdpSocketMessage = Message()
+        val initUdpSocketMessage = Message()
         initUdpSocketMessage.what = NetworkMessageHandler.INIT_UDP_SOCKET
         initUdpSocketMessage.obj = InitUdpSocketParam("0.0.0.0", config.port, initUdpSocketCallback)
 
@@ -89,7 +90,7 @@ class RemoteControlService : Service() {
                 return
             }
             //If initialization is ok, do rest things.
-            else if (initUdpSocketStatusCopy  == 1) {
+            else if (initUdpSocketStatusCopy == 1) {
                 break
             }
         }
@@ -102,7 +103,14 @@ class RemoteControlService : Service() {
             override fun run() {
                 val ips = getIPs(IPType.ALL)
                 val protocolPacket = NetworkPackage()
-                val protocolPacketContent = BroadcastRemoteControlServer("",0)
+                val protocolPacketContent = BroadcastRemoteControlServer()
+                val tempArray = Array<Byte>(0) { _ -> 0 }
+                val param = BroadcastPacketParam(DatagramPacket(tempArray.toByteArray(), tempArray.size), object : NetworkMessageCallback {
+                    override fun onMessageHandled(exception: Exception?) {
+                        exception?.let { Log.d("RemoteControlService", exception.toString()) }
+                    }
+                })
+
 
                 protocolPacket.content = protocolPacketContent
 
@@ -110,20 +118,27 @@ class RemoteControlService : Service() {
                     protocolPacketContent.ip = ip
                     protocolPacketContent.port = port
 
-                    val bytes = protocolPacketContent.toUBytes()
+                    val bytes = protocolPacket.toUBytes()
                     val packet = DatagramPacket(bytes.map { it.toByte() }.toByteArray(), bytes.size)
+
+                    param.packet = packet
+                    param.callback = object : NetworkMessageCallback {
+                        override fun onMessageHandled(exception: Exception?) {
+                            exception?.let { Log.d("RemoteControlService", exception.toString()) }
+                            postThis()
+                        }
+                    }
 
                     val message = Message()
                     message.what = NetworkMessageHandler.BROADCAST_PACKET
-                    message.obj = BroadcastPacketParam(packet, null)
+                    message.obj = param
 
                     thread!!.getHandler().sendMessage(message)
                 }
-                postThis()
             }
 
             fun postThis() {
-                handler.postDelayed(this, 5000)
+                handler.postDelayed(this, 10000)
             }
         }
 

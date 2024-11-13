@@ -22,9 +22,9 @@ class NetworkPackage: ResolvableData {
         //Check a package is valid package
         private fun packageCheck(bytes: Array<UByte>, startIndex: Int, endIndex: Int)
         {
-            if (startIndex < 0 || (bytes.isNotEmpty() && startIndex > bytes.size - 1) || (bytes.isEmpty() && startIndex != 0))
+            if (startIndex < 0 || (bytes.isNotEmpty() && startIndex > bytes.size) || (bytes.isEmpty() && startIndex != 0))
                 throw InvalidParameterException("startIndex value $startIndex is invalid")
-            if (endIndex < 0 || (bytes.isNotEmpty() && endIndex > bytes.size - 1) || (bytes.isEmpty() && endIndex != 0))
+            if (endIndex < 0 || (bytes.isNotEmpty() && endIndex > bytes.size) || (bytes.isEmpty() && endIndex != 0))
                 throw InvalidParameterException("endIndex value $endIndex is invalid")
 
             //Check if the size of bytes can be package.

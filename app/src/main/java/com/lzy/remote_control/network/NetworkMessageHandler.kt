@@ -22,11 +22,15 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
             } catch (exception2: Exception) {
                 exception = exception2
             }
-            callback?.onBroadcastCompleted(exception)
+            callback?.onMessageHandled(exception)
         }
 
         when (msg.what) {
             EXIT_THREAD -> {
+                if (udpSocket != null) {
+                    udpSocket!!.close()
+                    udpSocket = null
+                }
                 looper.quit()
             }
             INIT_UDP_SOCKET -> {
@@ -36,13 +40,12 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
                 val param = msg.obj as InitUdpSocketParam
 
                 if (udpSocket != null) {
-                    param.callback?.onBroadcastCompleted(RuntimeException("udpSocket is not null."))
+                    param.callback?.onMessageHandled(RuntimeException("udpSocket is not null."))
                     return
                 }
 
                 messageHandler(param.callback) {
-                    udpSocket = DatagramSocket()
-                    udpSocket!!.bind(InetSocketAddress(InetAddress.getByName(param.ipAddress), param.port))
+                    udpSocket = DatagramSocket(InetSocketAddress(InetAddress.getByName(param.ipAddress), param.port))
                 }
             }
             BROADCAST_PACKET -> {
@@ -52,14 +55,13 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
                 val param  = msg.obj as BroadcastPacketParam
 
                 if (udpSocket == null) {
-                    param.callback?.onBroadcastCompleted(RuntimeException("udpSocket is null"))
+                    param.callback?.onMessageHandled(RuntimeException("udpSocket is null"))
                     return
                 }
 
                 messageHandler(param.callback) {
-                    udpSocket!!.broadcast = true
+                    param.packet.address = InetAddress.getByName("255.255.255.255")
                     udpSocket!!.send(param.packet)
-                    udpSocket!!.broadcast = false
                 }
             }
         }
