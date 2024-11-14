@@ -84,12 +84,5 @@ fun getDataTypeInfo(classInfo: KClass<*>): ResolvableDataType? {
     return if (dataTypeInfo != null) dataTypeInfo as ResolvableDataType else null
 }
 
-fun hashPassword(password: String): String {
-    val crypto = MessageDigest.getInstance("SHA-256")
-    val passwordBytes = password.encodeToByteArray()
-    val resultBytes = crypto.digest(passwordBytes)
-    return Base64.encodeToString(resultBytes, Base64.DEFAULT)
-}
-
 //Port for server broadcast socket and broadcast destination.
 const val BROADCAST_INFO_PORT = 26650

@@ -20,9 +20,10 @@ class ExampleUnitTest {
     @Test
     fun testResolvableDataLoader() {
         val loader = ResolvableDataLoader()
-        assert(loader.resolvableDataTypeMap.size == 2)
+        assert(loader.resolvableDataTypeMap.size == 3)
         assert(loader.resolvableDataTypeMap[1] == NetworkPackage::class)
         assert(loader.resolvableDataTypeMap[2] == GetCurrentActivityRequest::class)
+        assert(loader.resolvableDataTypeMap[3] == BroadcastRemoteControlServer::class)
     }
 
     @Test
