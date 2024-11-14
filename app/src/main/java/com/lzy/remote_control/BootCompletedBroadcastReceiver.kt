@@ -1,6 +1,5 @@
 package com.lzy.remote_control
 
-import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent

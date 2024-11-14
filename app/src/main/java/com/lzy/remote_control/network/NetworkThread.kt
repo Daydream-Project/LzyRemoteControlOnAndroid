@@ -3,7 +3,7 @@ package com.lzy.remote_control.network
 import android.os.Handler
 import android.os.Looper
 
-class NetworkThread(): Thread() {
+class NetworkThread: Thread() {
     private var handler: NetworkMessageHandler? = null
 
     override fun run() {

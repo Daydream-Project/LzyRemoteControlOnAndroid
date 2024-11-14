@@ -21,7 +21,7 @@ class PermissionUtils {
         }
         //Get a array of permissions, test this permissions is allowed
         fun isPermissionsAllowed(permissions: Array<String>, context: Context): Array<Boolean> {
-            val result = Array<Boolean>(permissions.size) { _ -> false }
+            val result = Array(permissions.size) { _ -> false }
             for ((index, permission) in permissions.withIndex()) {
                 if (context.checkPermission(permission, Process.myPid(), Process.myUid()) == PackageManager.PERMISSION_GRANTED)
                     result[index] = true
@@ -49,7 +49,7 @@ class PermissionUtils {
             return notAllowedPermissions.toTypedArray()
         }
         //Get a array of permissions, request them foreach and the requestCode is the index of permission.
-        fun requestPermissions(permissions: Array<String>, activity: Activity): Unit {
+        fun requestPermissions(permissions: Array<String>, activity: Activity) {
             for ((index, permission) in permissions.withIndex()) {
                 ActivityCompat.requestPermissions(activity, arrayOf(permission), index)
             }

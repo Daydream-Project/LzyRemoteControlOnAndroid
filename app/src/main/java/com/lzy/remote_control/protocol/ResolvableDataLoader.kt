@@ -15,9 +15,7 @@ class ResolvableDataLoader {
         resolvableDataSubTypes.add(BroadcastRemoteControlServer::class)
 
         //Foreach subtype of ResolvableData, using data type id for key and KClass for value store in resolvableDataTypeMap
-
-        for (classInfo in resolvableDataSubTypes)
-        {
+        for (classInfo in resolvableDataSubTypes) {
             val dataTypeInfo = getDataTypeInfo(classInfo) ?: throw RuntimeException("Can not get data type info for subtype of ResolvableData")
 
             if (resolvableDataTypeMap.containsKey(dataTypeInfo.id))

@@ -1,9 +1,5 @@
 package com.lzy.remote_control.network
 
-import android.content.Context
-import android.content.Context.WIFI_SERVICE
-import android.net.ConnectivityManager
-import android.net.wifi.WifiManager
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.Collections

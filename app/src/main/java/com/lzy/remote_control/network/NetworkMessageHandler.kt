@@ -3,6 +3,7 @@ package com.lzy.remote_control.network
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
+import com.lzy.remote_control.protocol.BROADCAST_INFO_PORT
 
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -10,7 +11,7 @@ import java.net.InetSocketAddress
 import kotlin.RuntimeException
 
 class NetworkMessageHandler(looper: Looper): Handler(looper) {
-    private var udpSocket: DatagramSocket? = null
+    private var broadcastSocket: DatagramSocket? = null
     override fun handleMessage(msg: Message) {
         super.handleMessage(msg)
 
@@ -27,25 +28,44 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
 
         when (msg.what) {
             EXIT_THREAD -> {
-                if (udpSocket != null) {
-                    udpSocket!!.close()
-                    udpSocket = null
+                try {
+                    if (broadcastSocket != null) {
+                        broadcastSocket!!.close()
+                        broadcastSocket = null
+                    }
+                } finally {
+                    looper.quit()
                 }
-                looper.quit()
             }
             INIT_UDP_SOCKET -> {
-                if (msg.obj !is InitUdpSocketParam)
+                if (msg.obj !is OperateUdpSocketParam)
                     return
 
-                val param = msg.obj as InitUdpSocketParam
+                val param = msg.obj as OperateUdpSocketParam
 
-                if (udpSocket != null) {
+                if (broadcastSocket != null) {
                     param.callback?.onMessageHandled(RuntimeException("udpSocket is not null."))
                     return
                 }
 
                 messageHandler(param.callback) {
-                    udpSocket = DatagramSocket(InetSocketAddress(InetAddress.getByName(param.ipAddress), param.port))
+                    broadcastSocket = DatagramSocket(InetSocketAddress(InetAddress.getByName("0.0.0.0"), BROADCAST_INFO_PORT))
+                }
+            }
+            DESTROY_UDP_SOCKET -> {
+                if (msg.obj !is OperateUdpSocketParam)
+                    return
+
+                val param = msg.obj as OperateUdpSocketParam
+
+                if (broadcastSocket == null) {
+                    param.callback?.onMessageHandled(RuntimeException("udpSocket is null."))
+                    return
+                }
+
+                messageHandler(param.callback) {
+                    broadcastSocket!!.close()
+                    broadcastSocket = null
                 }
             }
             BROADCAST_PACKET -> {
@@ -54,14 +74,15 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
 
                 val param  = msg.obj as BroadcastPacketParam
 
-                if (udpSocket == null) {
+                if (broadcastSocket == null) {
                     param.callback?.onMessageHandled(RuntimeException("udpSocket is null"))
                     return
                 }
 
                 messageHandler(param.callback) {
                     param.packet.address = InetAddress.getByName("255.255.255.255")
-                    udpSocket!!.send(param.packet)
+                    param.packet.port = BROADCAST_INFO_PORT
+                    broadcastSocket!!.send(param.packet)
                 }
             }
         }
@@ -70,6 +91,7 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
     companion object {
         const val EXIT_THREAD = 0
         const val INIT_UDP_SOCKET = 1
-        const val BROADCAST_PACKET = 2
+        const val DESTROY_UDP_SOCKET = 2
+        const val BROADCAST_PACKET = 3
     }
 }

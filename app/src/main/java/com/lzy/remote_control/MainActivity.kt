@@ -3,7 +3,6 @@ package com.lzy.remote_control
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.InputType
-import android.util.Log
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity

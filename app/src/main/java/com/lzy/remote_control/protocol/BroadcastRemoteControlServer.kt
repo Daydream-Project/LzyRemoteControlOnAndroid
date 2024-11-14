@@ -1,7 +1,7 @@
 package com.lzy.remote_control.protocol
 
 @ResolvableDataType(3,"Server ip and port info in udp broadcast")
-class BroadcastRemoteControlServer(): ResolvableData {
+class BroadcastRemoteControlServer: ResolvableData {
     var ip: String = ""
     var port: Int = 0
 

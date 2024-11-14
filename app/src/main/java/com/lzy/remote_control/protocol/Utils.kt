@@ -1,6 +1,8 @@
 package com.lzy.remote_control.protocol
 
+import android.util.Base64
 import java.security.InvalidParameterException
+import java.security.MessageDigest
 import kotlin.reflect.KClass
 
 fun calculateCrc16(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = bytes.size): Int
@@ -81,3 +83,13 @@ fun getDataTypeInfo(classInfo: KClass<*>): ResolvableDataType? {
     val dataTypeInfo = classInfo.java.annotations.find { a -> a is ResolvableDataType }
     return if (dataTypeInfo != null) dataTypeInfo as ResolvableDataType else null
 }
+
+fun hashPassword(password: String): String {
+    val crypto = MessageDigest.getInstance("SHA-256")
+    val passwordBytes = password.encodeToByteArray()
+    val resultBytes = crypto.digest(passwordBytes)
+    return Base64.encodeToString(resultBytes, Base64.DEFAULT)
+}
+
+//Port for server broadcast socket and broadcast destination.
+const val BROADCAST_INFO_PORT = 26650

@@ -61,7 +61,6 @@ class NetworkPackage: ResolvableData {
         //Check the calculated CRC value is same in package.
         private fun crcCheck(bytes: Array<UByte>, startIndex: Int, endIndex: Int)
         {
-            val packageSize = endIndex - startIndex
             val crcValue = calculateCrc16(bytes, startIndex + packageBegin.size + dataTypeIdSize + packageLengthSize,endIndex - packageEnd.size - crcSize)
             val crcValueInPackage = ubytesToInt(bytes,endIndex - packageEnd.size - crcSize)
 
@@ -71,8 +70,6 @@ class NetworkPackage: ResolvableData {
     }
 
     var content: ResolvableData? = null
-        get() = field
-        set(value) { field = value }
 
     //Parse to bytes check
     //Now just check the content is not null
@@ -118,7 +115,7 @@ class NetworkPackage: ResolvableData {
         //Get data size.
         val dataSizeUByteArray = longToUBytes(contentUByteArray.size.toLong())
         //Get package size.
-        val packageSize = countUBytes().toInt()
+        val packageSize = countUBytes()
         //Get crc value of data.
         val crcUByteArray = intToUBytes(calculateCrc16(contentUByteArray))
 

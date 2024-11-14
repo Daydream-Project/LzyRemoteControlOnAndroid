@@ -4,10 +4,8 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.os.Build
-import android.util.Base64
 import androidx.appcompat.app.AppCompatActivity
 import java.security.InvalidParameterException
-import java.security.MessageDigest
 
 class RemoteServiceConfig(context: Context) {
 
@@ -18,7 +16,7 @@ class RemoteServiceConfig(context: Context) {
 
     companion object {
 
-        private const val configName = "LzyRemoteControlService";
+        private const val configName = "LzyRemoteControlService"
 
         private const val passwordKey = "passwordHash"
 
@@ -27,13 +25,6 @@ class RemoteServiceConfig(context: Context) {
         private const val enableServiceKey = "enableService"
 
         const val logTag = "LzyRemoteControl"
-
-        fun hashPassword(password: String): String {
-            val crypto = MessageDigest.getInstance("SHA-256")
-            val passwordBytes = password.encodeToByteArray()
-            val resultBytes = crypto.digest(passwordBytes)
-            return Base64.encodeToString(resultBytes, Base64.DEFAULT)
-        }
 
         fun startService(context: Context) {
             val serviceIntent = Intent(context, RemoteControlService::class.java)
@@ -48,8 +39,6 @@ class RemoteServiceConfig(context: Context) {
             context.stopService(serviceIntent)
         }
     }
-
-
 
     private fun isValidPort(portNum: Int): Boolean {
         return portNum in 1..65535

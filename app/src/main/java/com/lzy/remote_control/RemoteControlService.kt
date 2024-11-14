@@ -13,7 +13,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.lzy.remote_control.network.BroadcastPacketParam
 import com.lzy.remote_control.network.IPType
-import com.lzy.remote_control.network.InitUdpSocketParam
+import com.lzy.remote_control.network.OperateUdpSocketParam
 import com.lzy.remote_control.network.NetworkMessageCallback
 import com.lzy.remote_control.network.NetworkMessageHandler
 import com.lzy.remote_control.network.NetworkThread
@@ -21,6 +21,7 @@ import com.lzy.remote_control.network.getIPs
 import com.lzy.remote_control.protocol.BroadcastRemoteControlServer
 import com.lzy.remote_control.protocol.NetworkPackage
 import java.net.DatagramPacket
+
 
 class RemoteControlService : Service() {
     private var thread: NetworkThread? = null
@@ -71,13 +72,13 @@ class RemoteControlService : Service() {
         //Send init udp socket message and check the initialization is ok.
         val initUdpSocketMessage = Message()
         initUdpSocketMessage.what = NetworkMessageHandler.INIT_UDP_SOCKET
-        initUdpSocketMessage.obj = InitUdpSocketParam("0.0.0.0", config.port, initUdpSocketCallback)
+        initUdpSocketMessage.obj = OperateUdpSocketParam(initUdpSocketCallback)
 
         thread!!.getHandler().sendMessage(initUdpSocketMessage)
 
         //Wait for the result of initialization of udpSocket.
         while(true) {
-            var initUdpSocketStatusCopy = 0
+            var initUdpSocketStatusCopy: Int
 
             synchronized(initUdpSocketCallback) {
                 initUdpSocketStatusCopy = initUdpSocketCallback.initUdpSocketStatus
@@ -89,6 +90,7 @@ class RemoteControlService : Service() {
                 stopSelf()
                 return
             }
+
             //If initialization is ok, do rest things.
             else if (initUdpSocketStatusCopy == 1) {
                 break
@@ -105,8 +107,6 @@ class RemoteControlService : Service() {
                 val protocolPacket = NetworkPackage()
                 val protocolPacketContent = BroadcastRemoteControlServer()
                 val tempArray = Array<Byte>(0) { _ -> 0 }
-
-
 
                 protocolPacket.content = protocolPacketContent
 
@@ -135,7 +135,7 @@ class RemoteControlService : Service() {
                     message.what = NetworkMessageHandler.BROADCAST_PACKET
                     message.obj = param
 
-                    thread!!.getHandler().sendMessage(message)
+                    handler.sendMessage(message)
                 }
             }
 
