@@ -8,6 +8,8 @@ import com.lzy.remote_control.protocol.BROADCAST_INFO_PORT
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
+import java.util.Collections
 import kotlin.RuntimeException
 
 class NetworkMessageHandler(looper: Looper): Handler(looper) {
@@ -80,9 +82,25 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
                 }
 
                 messageHandler(param.callback) {
-                    param.packet.address = InetAddress.getByName("255.255.255.255")
-                    param.packet.port = BROADCAST_INFO_PORT
-                    broadcastSocket!!.send(param.packet)
+                    //List all address info in all network interface.
+                    //If a address info has a broadcast address, use this address to send message.
+
+                    val interfaces: List<NetworkInterface> =
+                        Collections.list(NetworkInterface.getNetworkInterfaces())
+                    for (interfaceObj in interfaces) {
+                        if (!interfaceObj.isLoopback) {
+                            for (address in interfaceObj.interfaceAddresses) {
+                                val broadcastAddress = address.broadcast
+                                if (broadcastAddress != null) {
+
+                                    param.packet.address = broadcastAddress
+                                    param.packet.port = BROADCAST_INFO_PORT
+
+                                    broadcastSocket!!.send(param.packet)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
