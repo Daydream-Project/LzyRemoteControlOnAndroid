@@ -45,6 +45,7 @@ class RemoteControlService : Service() {
             val exitThreadMessage = Message()
             exitThreadMessage.what = NetworkMessageHandler.EXIT_THREAD
             thread!!.getHandler().sendMessage(exitThreadMessage)
+            while (thread!!.state != Thread.State.TERMINATED) continue
             thread = null
         }
     }
