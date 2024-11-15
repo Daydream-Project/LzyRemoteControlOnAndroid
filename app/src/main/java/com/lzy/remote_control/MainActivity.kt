@@ -61,8 +61,7 @@ class MainActivity : AppCompatActivity() {
         passwordBox.setText(remoteServiceConfig.password)
         portBox.setText(remoteServiceConfig.port.toString())
 
-        if (remoteServiceConfig.enableService)
-        {
+        if (remoteServiceConfig.enableService) {
              try {
                  RemoteServiceConfig.startService(application)
                  enableServiceButton.isChecked = true

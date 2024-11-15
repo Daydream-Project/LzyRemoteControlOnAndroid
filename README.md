@@ -1,5 +1,6 @@
 # LzyRemoteControlOnAndroid
 A remote control app for android, maybe discarded because of my poor ability
+Client Repository is in https://github.com/Daydream-Project/LzyRemoteControlOnAndroid_Client
 
 # Environment
 Android Studio + Android 14 (mininum support android 7.0)
@@ -8,11 +9,10 @@ Android Studio + Android 14 (mininum support android 7.0)
 Udp broadcast test ok!(but the procotol need to improve)
 
 # Next step
-~~implement SSL socket communication.~~
-implment udp broadcast and discover function.
+implement SSL socket communication.
 
 # Functions plan to Implement
-1. Send instrution to control android device by SSL socket. (Simulate touch, caupture screenshot, get running activity)
+1. Send instruction to control android device by SSL socket. (Simulate touch, caupture screenshot, get running activity)
 2. Watch screen and play video in realtime (May using FFmpeg to encode vidoe and using RTSP to transfer video)
 3. Integrate OCR service calculate in Android Device to process video or screenshot.
 
