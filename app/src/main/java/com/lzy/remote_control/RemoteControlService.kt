@@ -17,10 +17,13 @@ import com.lzy.remote_control.network.OperateUdpSocketParam
 import com.lzy.remote_control.network.NetworkMessageCallback
 import com.lzy.remote_control.network.NetworkMessageHandler
 import com.lzy.remote_control.network.NetworkThread
+import com.lzy.remote_control.network.OperateSSLSocketParam
+import com.lzy.remote_control.network.SSLClientConnectedCallback
 import com.lzy.remote_control.network.getIPs
 import com.lzy.remote_control.protocol.BroadcastRemoteControlServer
 import com.lzy.remote_control.protocol.NetworkPackage
 import java.net.DatagramPacket
+import javax.net.ssl.SSLSocket
 
 
 class RemoteControlService : Service() {
@@ -58,48 +61,32 @@ class RemoteControlService : Service() {
         //Start network thread.
         thread!!.start()
 
+        var initSuccess = false
+
         //Create a init udpSocket callback that mark if success the initialization is
-        val initUdpSocketCallback = object : NetworkMessageCallback {
-            var initUdpSocketStatus = 0
+        val initUdpSocketCallback = object: NetworkThreadInitOperationTemplate() {
+            fun initUdpSocket() {
+                //Send init udp socket message and check the initialization is ok.
+                val initUdpSocketMessage = Message()
+                initUdpSocketMessage.what = NetworkMessageHandler.INIT_UDP_SOCKET
+                initUdpSocketMessage.obj = OperateUdpSocketParam(this)
 
-            override fun onMessageHandled(exception: Exception?) {
-                synchronized(this) {
-                    initUdpSocketStatus = if (exception == null) 1 else 2
-                }
+                thread!!.getHandler().sendMessage(initUdpSocketMessage)
             }
-
         }
 
-        //Send init udp socket message and check the initialization is ok.
-        val initUdpSocketMessage = Message()
-        initUdpSocketMessage.what = NetworkMessageHandler.INIT_UDP_SOCKET
-        initUdpSocketMessage.obj = OperateUdpSocketParam(initUdpSocketCallback)
+        val initSSLServerSocket = object: NetworkThreadInitOperationTemplate() {
+            fun initSSLServerSocket() {
+                val initSSLServerSocketMessage = Message()
+                initSSLServerSocketMessage.what = NetworkMessageHandler.INIT_SSL_SERVER
+                initSSLServerSocketMessage.obj = OperateSSLSocketParam(config.port, this)
 
-        thread!!.getHandler().sendMessage(initUdpSocketMessage)
-
-        //Wait for the result of initialization of udpSocket.
-        while(true) {
-            var initUdpSocketStatusCopy: Int
-
-            synchronized(initUdpSocketCallback) {
-                initUdpSocketStatusCopy = initUdpSocketCallback.initUdpSocketStatus
-            }
-
-            //If initialization is failed, stop service and exit.
-            if (initUdpSocketStatusCopy == 2) {
-                exitThread()
-                stopSelf()
-                return
-            }
-
-            //If initialization is ok, do rest things.
-            else if (initUdpSocketStatusCopy == 1) {
-                break
+                thread!!.getHandler().sendMessage(initSSLServerSocketMessage)
             }
         }
 
         //Make a object that broadcast ip and address when 5s passed.
-        val broadcastIPPort = object : Runnable {
+        val broadcastIPPort = object: Runnable, NetworkMessageCallback {
             private val port = config.port
             private val handler = thread!!.getHandler()
 
@@ -107,7 +94,6 @@ class RemoteControlService : Service() {
                 val ips = getIPs(IPType.ALL)
                 val protocolPacket = NetworkPackage()
                 val protocolPacketContent = BroadcastRemoteControlServer()
-                val tempArray = Array<Byte>(0) { _ -> 0 }
 
                 protocolPacket.content = protocolPacketContent
 
@@ -116,21 +102,8 @@ class RemoteControlService : Service() {
                     protocolPacketContent.port = port
 
                     val bytes = protocolPacket.toUBytes()
-                    val packet = DatagramPacket(bytes.map { it.toByte() }.toByteArray(), bytes.size)
 
-                    val param = BroadcastPacketParam(DatagramPacket(tempArray.toByteArray(), tempArray.size), object : NetworkMessageCallback {
-                        override fun onMessageHandled(exception: Exception?) {
-                            exception?.let { Log.d("RemoteControlService", exception.toString()) }
-                        }
-                    })
-
-                    param.packet = packet
-                    param.callback = object : NetworkMessageCallback {
-                        override fun onMessageHandled(exception: Exception?) {
-                            exception?.let { Log.d("RemoteControlService", exception.toString()) }
-                            postThis()
-                        }
-                    }
+                    val param = BroadcastPacketParam(DatagramPacket(bytes.map { it.toByte() }.toByteArray(), bytes.size), this)
 
                     val message = Message()
                     message.what = NetworkMessageHandler.BROADCAST_PACKET
@@ -140,13 +113,61 @@ class RemoteControlService : Service() {
                 }
             }
 
+            override fun onMessageHandled(exception: Exception?) {
+                exception?.let { Log.d("RemoteControlService", exception.toString()) }
+                postThis()
+            }
+
             fun postThis() {
                 handler.postDelayed(this, 10000)
             }
         }
 
-        //Start broadcast
-        broadcastIPPort.postThis()
+        //Make a object that loop accept ssl client
+        val acceptSSLClient = object: SSLClientConnectedCallback {
+            private val handler = thread!!.getHandler()
+
+            fun sendAcceptSSlClientMessage() {
+                val message = Message()
+                message.what = NetworkMessageHandler.ACCEPT_SSL_CLIENT
+                message.obj = this
+                handler.sendMessage(message)
+            }
+
+            override fun onSSLClientConnected(socket: SSLSocket?, exception: Exception?) {
+                sendAcceptSSlClientMessage()
+            }
+        }
+
+        do {
+            //Init udp socket
+            initUdpSocketCallback.initUdpSocket()
+
+            //If initialization is failed, break
+            //Else do rest things.
+            if (!initUdpSocketCallback.waitForInitSuccess())
+                break
+
+            //Init ssl server socket.
+            initSSLServerSocket.initSSLServerSocket()
+
+            //Start accept ssl client.
+            acceptSSLClient.sendAcceptSSlClientMessage()
+
+            if (!initSSLServerSocket.waitForInitSuccess())
+                break
+
+            //Start broadcast
+            broadcastIPPort.postThis()
+
+            initSuccess = true
+        } while (false)
+
+        //If initialization is failed, stop service and exit.
+        if (!initSuccess) {
+            exitThread()
+            stopSelf()
+        }
     }
 
     private fun buildNotification(contentText: String): Notification {
