@@ -130,8 +130,9 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
 
                 messageHandler(param.callback) {
                     val sslContext = SSLContext.getInstance("TLS")
+                    sslContext.init(null, null, null)
                     sslServerSocket = sslContext.serverSocketFactory.createServerSocket(param.port) as SSLServerSocket
-                    sslServerSocket!!.soTimeout = 0
+                    sslServerSocket!!.soTimeout = 1
                 }
             }
             DESTROY_SSL_SERVER -> {
@@ -146,41 +147,68 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
                 }
 
                 messageHandler(param.callback) {
-                    sslClientSocket!!.close()
-                    sslClientSocket = null
+                    sslServerSocket!!.close()
+                    sslServerSocket = null
                 }
             }
             SEND_SSL_BYTES -> {
-                if (msg.obj !is SendBytesParam)
+                if (msg.obj !is SSLTransferParam)
                     return
 
-                val param = msg.obj as SendBytesParam
+                val param = msg.obj as SSLTransferParam
 
                 if (sslClientSocket == null) {
-                    param.callback?.onMessageHandled(RuntimeException("sslServerSocket is null"))
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, false, RuntimeException("ssl socket is null"))
                     return
                 }
 
-                messageHandler(param.callback) {
-                    sslClientSocket!!.outputStream.write(param.bytes)
-                }
-            }
-            RECEIVE_SSL_BYTES -> {
-                if (msg.obj !is ReceiveBytesParam)
-                    return
-
-                val param = msg.obj as ReceiveBytesParam
-
-                if (sslClientSocket == null) {
-                    param.callback?.onBytesReceived(null,0,RuntimeException("sslServerSocket is null"))
+                if (param.isReceive) {
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, false, RuntimeException("do receive operation in send operation code is null"))
                     return
                 }
 
                 try {
-                    val readBytes = sslClientSocket!!.inputStream.read(param.bytes)
-                    param.callback?.onBytesReceived(param.bytes, readBytes, null)
+                    sslClientSocket!!.outputStream.write(param.buffer, param.offset, param.length)
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, param.length, false,null)
+                } catch (exception: SocketTimeoutException) {
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, false, exception)
                 } catch (exception: Exception) {
-                    param.callback?.onBytesReceived(null, 0, exception)
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, false, exception)
+
+                    val message = Message()
+                    message.what = DESTROY_SSL_CLIENT
+
+                    sendMessage(message)
+                }
+            }
+            RECEIVE_SSL_BYTES -> {
+                if (msg.obj !is SSLTransferParam)
+                    return
+
+                val param = msg.obj as SSLTransferParam
+
+                if (sslClientSocket == null) {
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, true, RuntimeException("sslServerSocket is null"))
+                    return
+                }
+
+                if (!param.isReceive) {
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, true, RuntimeException("do send operation in receive operation code is null"))
+                    return
+                }
+
+                try {
+                    val readBytes = sslClientSocket!!.inputStream.read(param.buffer, param.offset, param.length)
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, readBytes, true,null)
+                } catch (exception: SocketTimeoutException) {
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, true, exception)
+                } catch (exception: Exception) {
+                    param.callback.onTransferCompleted(param.buffer, param.offset, param.length, 0, true, exception)
+
+                    val message = Message()
+                    message.what = DESTROY_SSL_CLIENT
+
+                    sendMessage(message)
                 }
             }
             DESTROY_SSL_CLIENT -> {
@@ -211,13 +239,12 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
                             callback.onSSLClientConnected(sslSocket, null)
                             sslClientSocket = sslSocket
                             sslClientSocket!!.startHandshake()
-                            sslClientSocket!!.soTimeout = 0
+                            sslClientSocket!!.soTimeout = 1
                         }
                         else {
                             callback.onSSLClientConnected(null, null)
                             sslSocket.close()
                         }
-
                     }
                 } catch (exception2: SocketTimeoutException) {
                     callback.onSSLClientConnected(null, exception2)

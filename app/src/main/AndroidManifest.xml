@@ -43,6 +43,9 @@
             android:name=".RemoteControlService"
             android:exported="false"
             android:foregroundServiceType="remoteMessaging">
+            <intent-filter>
+                <action android:name="com.lzy.remote_control.BIND_SERVICE" />
+            </intent-filter>
         </service>
 
     </application>

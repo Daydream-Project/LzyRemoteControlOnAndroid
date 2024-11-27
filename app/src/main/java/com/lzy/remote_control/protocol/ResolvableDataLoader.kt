@@ -10,7 +10,7 @@ class ResolvableDataLoader {
 
         val resolvableDataSubTypes: MutableList<KClass<*>> = mutableListOf()
 
-        resolvableDataSubTypes.add(NetworkPackage::class)
+        resolvableDataSubTypes.add(NetworkPacket::class)
         resolvableDataSubTypes.add(GetCurrentActivityRequest::class)
         resolvableDataSubTypes.add(BroadcastRemoteControlServer::class)
 

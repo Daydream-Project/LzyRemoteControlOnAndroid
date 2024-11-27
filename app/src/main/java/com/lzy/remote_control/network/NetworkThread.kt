@@ -2,9 +2,18 @@ package com.lzy.remote_control.network
 
 import android.os.Handler
 import android.os.Looper
+import android.os.Message
 
 class NetworkThread: Thread() {
     private var handler: NetworkMessageHandler? = null
+
+    fun terminate() {
+        if (state == State.NEW) return
+        val exitThreadMessage = Message()
+        exitThreadMessage.what = NetworkMessageHandler.EXIT_THREAD
+        getHandler().sendMessage(exitThreadMessage)
+        while (state != Thread.State.TERMINATED) continue
+    }
 
     override fun run() {
         super.run()

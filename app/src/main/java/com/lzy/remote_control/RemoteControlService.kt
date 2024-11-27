@@ -6,8 +6,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.Message
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -21,13 +24,22 @@ import com.lzy.remote_control.network.OperateSSLSocketParam
 import com.lzy.remote_control.network.SSLClientConnectedCallback
 import com.lzy.remote_control.network.getIPs
 import com.lzy.remote_control.protocol.BroadcastRemoteControlServer
-import com.lzy.remote_control.protocol.NetworkPackage
+import com.lzy.remote_control.protocol.NetworkPacket
 import java.net.DatagramPacket
 import javax.net.ssl.SSLSocket
 
 
 class RemoteControlService : Service() {
+    inner class RemoteControlServiceBinder(private val service: RemoteControlService) : Binder() {
+        //a wrapper to RemoteControlService.getServiceStatus
+        fun getServiceStatus(): Int {
+            return service.getServiceStatus()
+        }
+    }
+
+    private var serviceStatus = SERVICE_STATUS_NOT_START
     private var thread: NetworkThread? = null
+    private val binder = RemoteControlServiceBinder(this)
 
     companion object {
         private const val CHANNEL_ID = "LzyRemoteControl"
@@ -35,20 +47,39 @@ class RemoteControlService : Service() {
         private const val CHANNEL_DESCRIPTION = "Channel for LzyRemoteControl Service"
         private const val SERVICE_TITLE = "LzyRemoteControl Service"
         private const val SERVICE_TEXT = "This is a remote control service"
+
+        //Service status values indicate service is running.
+        const val SERVICE_STATUS_NOT_START = 0
+        const val SERVICE_STATUS_RUNNING = 1
+        const val SERVICE_STATUS_EXITED = 2
+    }
+
+    //Set service status, thread safe
+    private fun setServiceStatus(_serviceStatus: Int) {
+        synchronized(this) {
+            serviceStatus = _serviceStatus
+        }
+    }
+
+    //Get service safe, thread safe
+    private fun getServiceStatus(): Int {
+        val valCopy: Int
+        synchronized(this) {
+            valCopy = serviceStatus
+        }
+        return valCopy
     }
 
     override fun onCreate() {
         super.onCreate()
         startForeground(1, buildNotification(SERVICE_TEXT))
         initNetworkThread()
+        setServiceStatus(SERVICE_STATUS_RUNNING)
     }
 
     private fun exitThread() {
         if (thread != null) {
-            val exitThreadMessage = Message()
-            exitThreadMessage.what = NetworkMessageHandler.EXIT_THREAD
-            thread!!.getHandler().sendMessage(exitThreadMessage)
-            while (thread!!.state != Thread.State.TERMINATED) continue
+            thread!!.terminate()
             thread = null
         }
     }
@@ -85,6 +116,9 @@ class RemoteControlService : Service() {
             }
         }
 
+        //Make objects receive message and handle it.
+        val packetReceiver = PacketLoopReceiver(thread!!.getHandler(), PacketProcessor())
+
         //Make a object that broadcast ip and address when 5s passed.
         val broadcastIPPort = object: Runnable, NetworkMessageCallback {
             private val port = config.port
@@ -92,7 +126,7 @@ class RemoteControlService : Service() {
 
             override fun run() {
                 val ips = getIPs(IPType.ALL)
-                val protocolPacket = NetworkPackage()
+                val protocolPacket = NetworkPacket()
                 val protocolPacketContent = BroadcastRemoteControlServer()
 
                 protocolPacket.content = protocolPacketContent
@@ -136,6 +170,10 @@ class RemoteControlService : Service() {
 
             override fun onSSLClientConnected(socket: SSLSocket?, exception: Exception?) {
                 sendAcceptSSlClientMessage()
+
+                if (socket != null) {
+                    packetReceiver.postReceiveBytes()
+                }
             }
         }
 
@@ -166,7 +204,7 @@ class RemoteControlService : Service() {
         //If initialization is failed, stop service and exit.
         if (!initSuccess) {
             exitThread()
-            stopSelf()
+            exitService()
         }
     }
 
@@ -216,9 +254,22 @@ class RemoteControlService : Service() {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.cancel(1)
         exitThread()
+        setServiceStatus(SERVICE_STATUS_EXITED)
+    }
+
+    private fun exitService() {
+        //Method stopSelf do not run onDestroy
+        //So write a method that stop service self and tun onDestroy method.
+        stopSelf()
+        onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
-        TODO("Not yet implemented")
+        //Return binder
+        return binder
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        return true
     }
 }

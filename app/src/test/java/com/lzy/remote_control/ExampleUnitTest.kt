@@ -21,7 +21,7 @@ class ExampleUnitTest {
     fun testResolvableDataLoader() {
         val loader = ResolvableDataLoader()
         assert(loader.resolvableDataTypeMap.size == 3)
-        assert(loader.resolvableDataTypeMap[1] == NetworkPackage::class)
+        assert(loader.resolvableDataTypeMap[1] == NetworkPacket::class)
         assert(loader.resolvableDataTypeMap[2] == GetCurrentActivityRequest::class)
         assert(loader.resolvableDataTypeMap[3] == BroadcastRemoteControlServer::class)
     }
@@ -30,7 +30,7 @@ class ExampleUnitTest {
     fun testNetworkPackage()
     {
         val request = GetCurrentActivityRequest()
-        val networkPackage = NetworkPackage()
+        val networkPackage = NetworkPacket()
 
         networkPackage.content = request
 

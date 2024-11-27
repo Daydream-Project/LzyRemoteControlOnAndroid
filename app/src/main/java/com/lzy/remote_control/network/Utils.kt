@@ -8,9 +8,9 @@ import java.util.Collections
 //CHeck a ip address is IPV6 version.
 fun IPisV6(ip: String): Boolean {
     return ip.find { value ->
-        return  value == 'a' || value == 'b' || value == 'c' || value == 'd' || value == 'e' || value == 'f' ||
-                value == 'A' || value == 'B' || value == 'C' || value == 'D' || value == 'E' || value == 'F' ||
-                value == ':'
+        value == 'a' || value == 'b' || value == 'c' || value == 'd' || value == 'e' || value == 'f' ||
+        value == 'A' || value == 'B' || value == 'C' || value == 'D' || value == 'E' || value == 'F' ||
+        value == ':'
     } != null
 }
 

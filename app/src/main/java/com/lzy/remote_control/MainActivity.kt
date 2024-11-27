@@ -1,7 +1,12 @@
 package com.lzy.remote_control
 
+import android.content.ComponentName
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
 import android.text.InputType
 import android.widget.*
 import androidx.activity.enableEdgeToEdge
@@ -11,9 +16,10 @@ import androidx.core.view.WindowInsetsCompat
 import java.security.InvalidParameterException
 import com.lzy.remote_control.permission.PermissionUtils
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ServiceConnection {
 
     private var requestPermissionsResultHandler: ((Int, Array<out String>, IntArray) -> Unit)? = null
+    private var binder: RemoteControlService.RemoteControlServiceBinder? = null
 
     //If the handler of RequestPermissionsResult registered, forward message to it.
     override fun onRequestPermissionsResult(
@@ -23,6 +29,12 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         requestPermissionsResultHandler?.invoke(requestCode, permissions, grantResults)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        //Unbind service.
+        unbindService(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 
         if (remoteServiceConfig.enableService) {
              try {
-                 RemoteServiceConfig.startService(application)
+                 RemoteServiceConfig.startService(application, this)
                  enableServiceButton.isChecked = true
                  passwordBox.isEnabled = false
                  portBox.isEnabled = false
@@ -101,12 +113,17 @@ class MainActivity : AppCompatActivity() {
 
                     val password = passwordBox.text.toString()
 
+                    if (password.length < 8) {
+                        Toast.makeText(this,"Password must has chars more than eight.", Toast.LENGTH_LONG).show()
+                        break
+                    }
+
                     remoteServiceConfig.updateConnectionConfig(password, port)
 
                     try {
-                        RemoteServiceConfig.stopService(application)
-                        RemoteServiceConfig.startService(application)
-                    } catch (_ : Exception) {
+                        RemoteServiceConfig.stopService(application, this)
+                        RemoteServiceConfig.startService(application, this)
+                    } catch (exception: Exception) {
                         Toast.makeText(this, "Can not start service", Toast.LENGTH_LONG).show()
                         break
                     }
@@ -130,7 +147,7 @@ class MainActivity : AppCompatActivity() {
                 //Stop Service.
 
                 try {
-                    RemoteServiceConfig.stopService(application)
+                    RemoteServiceConfig.stopService(application, this)
                 } catch (_ : Exception) {
                     Toast.makeText(this,"Can not stop service",Toast.LENGTH_LONG).show()
                 }
@@ -156,5 +173,43 @@ class MainActivity : AppCompatActivity() {
             else
                 passwordBox.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
         }
+    }
+
+    override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+        binder = service as RemoteControlService.RemoteControlServiceBinder
+        val enableServiceButton = findViewById<ToggleButton>(R.id.enableServiceBtn)
+        val activityCopy = this
+        val binderCopy = binder
+
+        //When service is bind, loop run a object checks service is running.
+
+        val serviceRunningCheck = object: Runnable {
+            private val handler = Handler(Looper.getMainLooper())
+            override fun run() {
+                val serviceStatus = binderCopy!!.getServiceStatus()
+                if (serviceStatus != RemoteControlService.SERVICE_STATUS_EXITED) {
+                    postThis()
+                } else {
+                    enableServiceButton.isChecked = false
+                    try {
+                        unbindService(activityCopy)
+                    } catch (_: Exception) {
+
+                    }
+                    Toast.makeText(activityCopy, "Service stopped.", Toast.LENGTH_LONG).show()
+                }
+            }
+
+            fun postThis() {
+                handler.post(this)
+            }
+        }
+
+        serviceRunningCheck.postThis()
+    }
+
+    override fun onServiceDisconnected(name: ComponentName?) {
+        //On unbind, set the binder to null.
+        binder = null
     }
 }

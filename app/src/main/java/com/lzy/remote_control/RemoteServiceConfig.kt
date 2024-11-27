@@ -1,8 +1,10 @@
 package com.lzy.remote_control
 
+import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import java.security.InvalidParameterException
@@ -26,16 +28,27 @@ class RemoteServiceConfig(context: Context) {
 
         const val logTag = "LzyRemoteControl"
 
-        fun startService(context: Context) {
+        fun startService(context: Context, serviceConnection: ServiceConnection?) {
             val serviceIntent = Intent(context, RemoteControlService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
             }
-            context.startService(serviceIntent)
+            if (serviceConnection != null) {
+                serviceIntent.action = "com.lzy.remote_control.BIND_SERVICE"
+                context.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+            }
         }
 
-        fun stopService(context: ContextWrapper) {
+        fun stopService(context: ContextWrapper, serviceConnection: ServiceConnection?) {
             val serviceIntent = Intent(context, RemoteControlService::class.java)
+            try {
+                if (serviceConnection != null)
+                    context.unbindService(serviceConnection)
+            } catch (_: Exception) {
+
+            }
             context.stopService(serviceIntent)
         }
     }

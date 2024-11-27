@@ -15,7 +15,7 @@ class BootCompletedBroadcastReceiver : BroadcastReceiver() {
 
                     //If the enableService state in config is enabled, start service.
                     if (remoteServiceConfig.enableService) {
-                        RemoteServiceConfig.startService(context.applicationContext)
+                        RemoteServiceConfig.startService(context.applicationContext, null)
                     }
                 } catch (e: Exception) {
                     Log.d(RemoteServiceConfig.logTag, "Start Service failed! Exception is $e")

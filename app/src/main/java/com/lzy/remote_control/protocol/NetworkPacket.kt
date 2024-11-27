@@ -4,7 +4,7 @@ import java.security.InvalidParameterException
 import kotlin.RuntimeException
 
 @ResolvableDataType(1,"Network package.")
-class NetworkPackage: ResolvableData {
+class NetworkPacket: ResolvableData {
 
     companion object {
         //Package Begin and package end bytes.
