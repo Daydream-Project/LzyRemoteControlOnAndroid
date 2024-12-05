@@ -12,6 +12,8 @@ class NetworkThread: Thread() {
         val exitThreadMessage = Message()
         exitThreadMessage.what = NetworkMessageHandler.EXIT_THREAD
         getHandler().sendMessage(exitThreadMessage)
+        if (id == Thread.currentThread().id)
+            return
         while (state != Thread.State.TERMINATED) continue
     }
 

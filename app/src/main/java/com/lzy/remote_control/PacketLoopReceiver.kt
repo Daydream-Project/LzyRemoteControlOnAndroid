@@ -86,35 +86,40 @@ class PacketLoopReceiver(_handler: Handler, _callback: PacketReceiveHandler) : S
         exception: Exception?
     )
     {
-        synchronized(this) {
-            if (recvStep == RECEIVE_PACKET_CRC_AND_PACKET_END && bytesRemain - length == 0) {
-                val ubyteArray = Array<UByte>(beforeContentBuffer.size + contentBytes!!.size + afterContentBuffer.size) {
-                    index ->
-                    if (index < beforeContentBuffer.size)
-                        beforeContentBuffer[index].toUByte()
-                    else if (index - LENGTH_BEFORE_CONTENT < contentBytes!!.size)
-                        contentBytes!![index - LENGTH_BEFORE_CONTENT].toUByte()
-                    else if (index - LENGTH_BEFORE_CONTENT - contentBytes!!.size < afterContentBuffer.size)
-                        afterContentBuffer[index - LENGTH_BEFORE_CONTENT - contentBytes!!.size].toUByte()
-                    else
-                        0.toUByte()
-                }
-                try {
-                    val packet = NetworkPacket()
-                    packet.fromUBytes(ubyteArray)
+        if (exception == null) {
+            synchronized(this) {
+                if (recvStep == RECEIVE_PACKET_CRC_AND_PACKET_END && bytesRemain - length == 0) {
+                    val ubyteArray =
+                        Array<UByte>(beforeContentBuffer.size + contentBytes!!.size + afterContentBuffer.size) { index ->
+                            if (index < beforeContentBuffer.size)
+                                beforeContentBuffer[index].toUByte()
+                            else if (index - LENGTH_BEFORE_CONTENT < contentBytes!!.size)
+                                contentBytes!![index - LENGTH_BEFORE_CONTENT].toUByte()
+                            else if (index - LENGTH_BEFORE_CONTENT - contentBytes!!.size < afterContentBuffer.size)
+                                afterContentBuffer[index - LENGTH_BEFORE_CONTENT - contentBytes!!.size].toUByte()
+                            else
+                                0.toUByte()
+                        }
+                    try {
+                        val packet = NetworkPacket()
+                        packet.fromUBytes(ubyteArray)
 
-                    mainThreadHandler.post {
-                        callback.onPacketReceived(packet, handler)
-                    }
+                        mainThreadHandler.post {
+                            callback.onPacketReceived(packet, handler)
+                        }
 
-                } catch (exception: Exception) {
-                    mainThreadHandler.post {
-                        callback.onPacketReceiveError(exception, handler)
+                    } catch (exception: Exception) {
+                        mainThreadHandler.post {
+                            callback.onPacketReceiveError(exception, handler)
+                        }
                     }
                 }
             }
+            postReceiveBytes()
+        } else {
+            mainThreadHandler.post {
+                callback.onPacketReceiveError(exception, handler)
+            }
         }
-
-        postReceiveBytes()
     }
 }

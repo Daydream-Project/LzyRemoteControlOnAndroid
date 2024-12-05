@@ -8,6 +8,5 @@ class PacketProcessor: PacketReceiveHandler {
     }
 
     override fun onPacketReceiveError(exception: Exception, handler: Handler) {
-        TODO("Not yet implemented")
     }
 }
