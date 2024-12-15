@@ -9,15 +9,12 @@ import com.lzy.remote_control.network.SSLTransferCallback
 import com.lzy.remote_control.protocol.NetworkPacket
 import com.lzy.remote_control.protocol.ubytesToInt
 
-class PacketLoopReceiver(_handler: Handler, _callback: PacketReceiveHandler) : SSLTransferCallback {
+class PacketLoopReceiver(private val handler: Handler, private val callback: PacketReceiveHandler) : SSLTransferCallback {
     private var recvStep = 1
     private var bytesRemain = LENGTH_BEFORE_CONTENT
     private var contentLength = 0
 
-    private val handler = _handler
     private val mainThreadHandler = Handler(Looper.getMainLooper())
-
-    private val callback = _callback
 
     private val beforeContentBuffer = ByteArray(LENGTH_BEFORE_CONTENT)
     private val afterContentBuffer = ByteArray(LENGTH_AFTER_CONTENT)

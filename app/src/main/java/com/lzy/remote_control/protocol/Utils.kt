@@ -1,18 +1,16 @@
 package com.lzy.remote_control.protocol
 
-import android.util.Base64
 import java.security.InvalidParameterException
-import java.security.MessageDigest
 import kotlin.reflect.KClass
 
-fun calculateCrc16(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = bytes.size): Int
-{
+fun calculateCrc16(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = bytes.size): Int {
     if (startIndex < 0 || (bytes.isNotEmpty() && startIndex > bytes.size) || (bytes.isEmpty() && startIndex != 0))
         throw InvalidParameterException("startIndex value $startIndex is invalid")
     if (endIndex < 0 || (bytes.isNotEmpty() && endIndex > bytes.size) || (bytes.isEmpty() && endIndex != 0))
         throw InvalidParameterException("endIndex value $endIndex is invalid")
 
     var crc = 0xFFFF
+
     for (idx in startIndex until  endIndex) {
         val byte = bytes[idx]
         crc = crc xor byte.toInt()
@@ -28,7 +26,6 @@ fun calculateCrc16(bytes: Array<UByte>, startIndex: Int = 0, endIndex: Int = byt
     return crc and 0xFFFF
 }
 
-
 fun ubytesToLong(bytes: Array<UByte>, startIndex: Int): Long {
     var result : Long = 0
     var temp : Long
@@ -41,8 +38,7 @@ fun ubytesToLong(bytes: Array<UByte>, startIndex: Int): Long {
     return result
 }
 
-fun ubytesToInt(bytes: Array<UByte>, startIndex: Int): Int
-{
+fun ubytesToInt(bytes: Array<UByte>, startIndex: Int): Int {
     var result = 0
     var temp : Int
 

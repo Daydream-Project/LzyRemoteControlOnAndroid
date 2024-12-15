@@ -1,10 +1,13 @@
 package com.lzy.remote_control.network
 
+import android.app.Application
+import android.content.Context
+import android.content.res.AssetManager
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
+import com.lzy.remote_control.R
 import com.lzy.remote_control.protocol.BROADCAST_INFO_PORT
-import java.io.FileInputStream
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -18,10 +21,11 @@ import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.SSLSocket
 
 
-class NetworkMessageHandler(looper: Looper): Handler(looper) {
+class NetworkMessageHandler(looper: Looper, private val context: Context): Handler(looper) {
     private var broadcastSocket: DatagramSocket? = null
     private var sslServerSocket: SSLServerSocket? = null
     private var sslClientSocket: SSLSocket? = null
+
     override fun handleMessage(msg: Message) {
         super.handleMessage(msg)
 
@@ -133,7 +137,8 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
                 messageHandler(param.callback) {
                     //Create keystore key source is server.keystore.
                     val ks = KeyStore.getInstance("PKCS12")
-                    ks.load(javaClass.getResourceAsStream("./server.keystore"), "@2003LIUzhiYING".toCharArray())
+                    val keyFile = context.resources.openRawResource(R.raw.server)
+                    ks.load(keyFile, "@2003LIUzhiYING".toCharArray())
 
                     //Create key store factory.
                     val kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm())
@@ -244,30 +249,26 @@ class NetworkMessageHandler(looper: Looper): Handler(looper) {
 
                 try {
                     sslSocket = sslServerSocket?.accept() as SSLSocket
-                    sslSocket.let {
-
-                        if (sslClientSocket == null) {
-                            callback.onSSLClientConnected(sslSocket, null)
-                            sslSocket.soTimeout = 1000
-                            sslSocket.startHandshake()
-                            sslSocket.soTimeout = 1
-                            sslClientSocket = sslSocket
-                        } else {
-                            callback.onSSLClientConnected(null, null)
-                            sslSocket.close()
-                        }
+                    if (sslClientSocket == null) {
+                        callback.onSSLClientConnected(sslSocket, null)
+                        sslSocket.soTimeout = 1000
+                        sslSocket.startHandshake()
+                        sslSocket.soTimeout = 1
+                        sslClientSocket = sslSocket
+                    } else {
+                        callback.onSSLClientConnected(null, null)
+                        sslSocket.close()
                     }
                 } catch (exception2: SocketTimeoutException) {
                     callback.onSSLClientConnected(null, exception2)
                 } catch (exception2: Exception) {
-                    if (exception2 is NullPointerException)
-                        return
-
                     callback.onSSLClientConnected(null, exception2)
                     sslSocket?.close()
                 }
             }
         }
+
+
     }
 
     companion object {

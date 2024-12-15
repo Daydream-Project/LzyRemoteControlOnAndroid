@@ -22,11 +22,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection {
     private var binder: RemoteControlService.RemoteControlServiceBinder? = null
 
     //If the handler of RequestPermissionsResult registered, forward message to it.
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         requestPermissionsResultHandler?.invoke(requestCode, permissions, grantResults)
     }
@@ -79,7 +75,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection {
                  enableServiceButton.isChecked = true
                  passwordBox.isEnabled = false
                  portBox.isEnabled = false
-             } catch (_:Exception) {
+             } catch (_: Exception) {
                  enableServiceButton.isChecked = false
              }
         }
@@ -134,8 +130,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection {
                 if (!ok) {
                     btn.isChecked = false
                     remoteServiceConfig.enableService = false
-                }
-                else {
+                } else {
                     passwordBox.isEnabled = false
                     portBox.isEnabled = false
                     remoteServiceConfig.enableService = true
@@ -201,7 +196,7 @@ class MainActivity : AppCompatActivity(), ServiceConnection {
             }
 
             fun postThis() {
-                handler.post(this)
+                handler.postDelayed(this, 2)
             }
         }
 

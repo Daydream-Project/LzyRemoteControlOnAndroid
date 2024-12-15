@@ -87,7 +87,7 @@ class RemoteControlService : Service() {
     private fun initNetworkThread() {
         val config = RemoteServiceConfig(applicationContext)
 
-        thread = NetworkThread()
+        thread = NetworkThread(applicationContext)
 
         //Start network thread.
         thread!!.start()
@@ -145,15 +145,16 @@ class RemoteControlService : Service() {
 
                     handler.sendMessage(message)
                 }
+
+                postThis()
             }
 
             override fun onMessageHandled(exception: Exception?) {
                 exception?.let { Log.d("RemoteControlService", exception.toString()) }
-                postThis()
             }
 
             fun postThis() {
-                handler.postDelayed(this, 10000)
+                handler.postDelayed(this, 5000)
             }
         }
 
@@ -165,7 +166,7 @@ class RemoteControlService : Service() {
                 val message = Message()
                 message.what = NetworkMessageHandler.ACCEPT_SSL_CLIENT
                 message.obj = this
-                handler.sendMessage(message)
+                handler.sendMessageDelayed(message, 2)
             }
 
             override fun onSSLClientConnected(socket: SSLSocket?, exception: Exception?) {
@@ -178,6 +179,7 @@ class RemoteControlService : Service() {
         }
 
         do {
+
             //Init udp socket
             initUdpSocketCallback.initUdpSocket()
 

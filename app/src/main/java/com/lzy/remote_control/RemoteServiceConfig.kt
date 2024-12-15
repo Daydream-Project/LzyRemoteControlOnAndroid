@@ -89,12 +89,10 @@ class RemoteServiceConfig(context: Context) {
         }
 
     var port: Int
-        get()
-        {
+        get() {
             return sharedPreferences.getInt(portKey, 0)
         }
-        set(value)
-        {
+        set(value) {
             if (!isValidPort(value))
                 throw InvalidParameterException("value")
 

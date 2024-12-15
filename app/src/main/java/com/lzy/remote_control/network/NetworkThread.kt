@@ -1,10 +1,11 @@
 package com.lzy.remote_control.network
 
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
 
-class NetworkThread: Thread() {
+class NetworkThread(private val context: Context): Thread() {
     private var handler: NetworkMessageHandler? = null
 
     fun terminate() {
@@ -24,8 +25,9 @@ class NetworkThread: Thread() {
         val looper = Looper.myLooper() ?: throw RuntimeException("Get not get looper for current thread.")
         //Initialize handler
         synchronized(this) {
-            handler = NetworkMessageHandler(looper)
+            handler = NetworkMessageHandler(looper, context)
         }
+
         //Run looper
         Looper.loop()
     }
